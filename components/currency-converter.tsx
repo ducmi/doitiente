@@ -59,6 +59,9 @@ function formatDate(iso: string) {
   return `${d}/${m}/${y}`
 }
 
+// Giới hạn tối đa: 999 tỷ — an toàn với Number.MAX_SAFE_INTEGER, đủ cho mọi use case thực tế
+const MAX_AMOUNT = 999_999_999_999
+
 // --- Component chính ---
 
 export function CurrencyConverter() {
@@ -143,6 +146,22 @@ export function CurrencyConverter() {
     }
   }, [amount, fromCurrency, toCurrency]) // Chạy lại mỗi khi 1 trong 3 thay đổi
 
+  // --- Handler: giới hạn và validate số tiền ---
+  function handleAmountChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value
+    // Cho phép rỗng (user đang xóa hết)
+    if (raw === "") { setAmount(""); return }
+    const num = parseFloat(raw)
+    if (isNaN(num)) return
+    // Clamp: âm → 0, vượt max → max
+    if (num < 0) { setAmount("0"); return }
+    if (num > MAX_AMOUNT) { setAmount(String(MAX_AMOUNT)); return }
+    setAmount(raw)
+  }
+
+  // Hiện hint khi user chạm giới hạn (không dùng state riêng — tính trực tiếp)
+  const showMaxHint = parseFloat(amount) >= MAX_AMOUNT
+
   // --- Handler: hoán đổi from ↔ to ---
   function handleSwap() {
     setFromCurrency(toCurrency)
@@ -201,10 +220,14 @@ export function CurrencyConverter() {
             min="0"
             step="any"
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={handleAmountChange}
             className="text-lg h-11"
             placeholder="Nhập số tiền..."
           />
+          {/* Hint chỉ hiện khi chạm giới hạn — không popup, không gây khó chịu */}
+          {showMaxHint && (
+            <p className="text-xs text-muted-foreground">Tối đa 999,999,999,999</p>
+          )}
         </div>
 
         {/* --- Hàng chọn tiền tệ: From + swap + To --- */}
@@ -270,17 +293,33 @@ export function CurrencyConverter() {
         {/* Kết quả */}
         {!loadingResult && result && (
           <>
-            <p className="text-2xl font-semibold">
-              {formatNumber(result.amount)} {result.from} =
-            </p>
-            <p className="text-3xl font-bold text-primary">
-              {formatNumber(result.result)} {result.to}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              1 {result.from} = {formatNumber(result.rate)} {result.to}
-              {" · "}
-              Cập nhật: {formatDate(result.date)}
-            </p>
+            {(() => {
+              // Font size thích ứng theo độ dài chuỗi đã format
+              const resultStr = formatNumber(result.result)
+              const amountStr = formatNumber(result.amount)
+              const resultClass =
+                resultStr.length > 18 ? "text-xl font-bold text-primary" :
+                resultStr.length > 12 ? "text-2xl font-bold text-primary" :
+                                        "text-3xl font-bold text-primary"
+              const amountClass =
+                amountStr.length > 15 ? "text-lg font-semibold" : "text-2xl font-semibold"
+              return (
+                <>
+                  {/* break-all: safety net khi số quá dài vẫn xuống dòng đúng chỗ */}
+                  <p className={`${amountClass} w-full break-all`}>
+                    {amountStr} {result.from} =
+                  </p>
+                  <p className={`${resultClass} w-full break-all`}>
+                    {resultStr} {result.to}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    1 {result.from} = {formatNumber(result.rate)} {result.to}
+                    {" · "}
+                    Cập nhật: {formatDate(result.date)}
+                  </p>
+                </>
+              )
+            })()}
           </>
         )}
 
