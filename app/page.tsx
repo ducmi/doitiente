@@ -1,10 +1,16 @@
-// Server Component — không cần "use client" vì không có state hay event
+// Server Component — không cần "use client"
 import { CurrencyConverter } from "@/components/currency-converter"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function Home() {
   return (
-    // Căn giữa màn hình theo cả chiều dọc và ngang
-    <main className="flex flex-1 flex-col items-center justify-center gap-6 px-4 py-16">
+    // relative để ThemeToggle dùng absolute positioning không ảnh hưởng centering
+    <main className="relative flex flex-1 flex-col items-center justify-center gap-6 px-4 py-16">
+      {/* Toggle góc trên phải — absolute không tham gia vào flex flow */}
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
       {/* --- Tiêu đề trang --- */}
       <div className="text-center">
         <h1 className="text-4xl font-bold tracking-tight text-foreground">
