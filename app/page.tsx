@@ -10,9 +10,6 @@ export default function Home() {
         <h1 className="text-4xl font-bold tracking-tight text-foreground">
           doitiente
         </h1>
-        <p className="mt-2 text-muted-foreground">
-          Chuyển đổi VND và 170+ loại tiền tệ
-        </p>
       </div>
 
       {/* --- Card chuyển đổi (Client Component) --- */}
